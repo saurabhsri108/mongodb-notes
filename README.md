@@ -221,7 +221,7 @@
       .limit(5)
       .sort({ founded_year: 1 }); // While the limit() and sort() methods are not listed in the correct order, MongoDB flips their order when executing the query, delivering the results that the question prompt is looking for.
     ```
-14. **Indexing
+14. **Indexing**
 
     ```js
     /**
@@ -234,7 +234,7 @@
 
 15. **Data modeling:** a way to organize fields in a document to support your application performance and querying capabilities.
 
-16. **Upsert [Update or Insert?]
+16. **Upsert [Update or Insert?]**
     ```js
     db.iot.updateOne(
       { sensor: r.sensor, date: r.date, valcount: { $lt: 48 } },
