@@ -80,32 +80,32 @@
 
     db.inspection.drop() // Drop the inspection collection
 
-    /** 
+    /**
      * Operators: $eq (equal to), $ne (not equal to), $lt (less than), $gt (greater than), $gte, $lte
      * $eq is default
      */
 
     db.trips.find({ "tripduration": { "$lte" : 70 },"usertype": "Customer" }).pretty()
 
-    /** Logical Operators 
+    /** Logical Operators
      * $and: Matches all of the specified query clauses
      * $or: At least one of the query clauses is matched
      * $nor: Fail to match both given clauses
      * $not: Negates the query requirement
-     * 
+     *
      * $and is default
     */
 
-    db.routes.find({ "$and": [ 
-            { "$or" :[ 
+    db.routes.find({ "$and": [
+            { "$or" :[
                         { "dst_airport": "KZN" },
                         { "src_airport": "KZN" }
-                     ] 
+                     ]
             },
-            { "$or" :[ 
+            { "$or" :[
                         { "airplane": "CR2" },
-                        { "airplane": "A81" } 
-                     ] 
+                        { "airplane": "A81" }
+                     ]
             }
         ]
     }).pretty()
@@ -148,10 +148,10 @@
 
     /**
      * Projection: To project only the values of fields specified
-     */                        
+     */
     db.listingsAndReviews.find({ "amenities": "Wifi" },
                            { "price": 1, "address": 1, "_id": 0 }).pretty() // only price and address fields will be shown in the result. Also, don't use inclusion (1) and exclusion(0) simultaneously unless it's for _id field.
-    
+
     db.grades.find({ "class_id": 431 },
                { "scores": { "$elemMatch": { "score": { "$gt": 85 } } }
              }).pretty() // Find all documents where the student in class 431 received a grade higher than 85 for any type of assignment:
@@ -183,4 +183,65 @@
 
     _mongo shell_ is a fully functional javascript interpreter. It helps interact with mongo instance without the use of GUI
 
-    
+13. **Aggregation Framework Command:**
+
+    ```js
+    db.listingsAndReviews
+      .aggregate([
+        { $match: { amenities: "Wifi" } },
+        { $project: { price: 1, address: 1, _id: 0 } },
+      ])
+      .pretty(); // Using the aggregation framework find all documents that have Wifi as one of the amenities``*. Only include* ``price and address in the resulting cursor.
+
+    db.listingsAndReviews.aggregate([
+      { $project: { address: 1, _id: 0 } },
+      { $group: { _id: "$address.country", count: { $sum: 1 } } },
+    ]); // Project only the address field value for each document, then group all documents into one document per address.country value, and count one for each document in each group.
+
+    // Any find() query can be translated into an aggregation pipeline equivalent, but not every aggregation pipeline can be translated into a find() query.
+
+    // The aggregation framework allows us to compute and reshape data via using stages like $group, $sum, and others.
+
+    /** Cursor Methods: pretty(), count(), sort(), limit() - A cursor method is not applied to the data stored in the database. It is instead applied to the resultset that lives in the cursor.
+     *
+     * Order matters here for cursor methods. sort().limit() -> adds limit to the sorted resultset. limit().sort() -> limits the resultset and then applies the sort operation.
+     * */
+    db.zips.find().sort({ pop: 1 }).limit(1); // pop: 1 -> decreasing
+
+    db.zips.find({ pop: 0 }).count(); // pop: 0 -> No sorting
+
+    db.zips.find().sort({ pop: -1 }).limit(1); // pop: -1 -> increasing
+
+    db.zips.find().sort({ pop: -1 }).limit(10); // limit: 10 -> 10 top results based on pop modification
+
+    db.zips.find().sort({ pop: 1, city: -1 }); // city: -1 -> decreasing [Z->A]
+
+    db.companies
+      .find({ founded_year: { $ne: null } }, { name: 1, founded_year: 1 })
+      .limit(5)
+      .sort({ founded_year: 1 }); // While the limit() and sort() methods are not listed in the correct order, MongoDB flips their order when executing the query, delivering the results that the question prompt is looking for.
+    ```
+14. **Indexing
+
+    ```js
+    /**
+     * Indexing is the data structure that is used to make our query faster. Since memory consumption and time to sort the data increases with the amount of data, we need it.
+     */
+    db.trips.createIndex({ "birth year": 1 });
+
+    db.trips.createIndex({ "start station id": 1, "birth year": 1 });
+    ```
+
+15. **Data modeling:** a way to organize fields in a document to support your application performance and querying capabilities.
+
+16. **Upsert [Update or Insert?]
+    ```js
+    db.iot.updateOne(
+      { sensor: r.sensor, date: r.date, valcount: { $lt: 48 } },
+      {
+        $push: { readings: { v: r.value, t: r.time } },
+        $inc: { valcount: 1, total: r.value },
+      },
+      { upsert: true }
+    );
+    ```
